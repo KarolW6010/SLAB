@@ -3,8 +3,6 @@ import matplotlib.pyplot as plt
 
 N = 10000	#Samples
 fs = 1e6
-fmin = 1e6
-fmax = 1.5e6
 T = 1/fs
 
 def prepare(x):
@@ -17,10 +15,10 @@ def prepare(x):
 
 	return vecs
 
-k = (fmax-fmin)/(40*np.pi*T)
+#k = (fmax-fmin)/(40*np.pi*T)
 
-t = np.linspace(0,40*np.pi/fmin,N)
-x = np.round(np.cos(2*np.pi*(fmin*t + k*(t**2)/2))*127)
+t = np.linspace(0,(N-1)*T,N)
+x = np.round(np.cos(2*np.pi*(99e6 + .75*fs)*t)*127)
 x = np.int_(x)
 
 plt.figure()
