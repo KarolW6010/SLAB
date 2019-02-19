@@ -10,7 +10,6 @@ const int NUM_SAMPLES = 1024;		//Samples per autocorrelation matrix
 const int FRAC_BITS = 43;		//Fractional bits for auto corr numbers
 
 //Function Prototypes
-//void centroid(float points[ANTS][3], float *center);	//Finds centroid of the points
 
 int main(){
 	float freq = 915*pow(10,6);		//Frequency of RFID Tags
@@ -42,8 +41,6 @@ int main(){
 	float *center1, *center2;
 	center1 = malloc(3*sizeof(float));
 	center2 = malloc(3*sizeof(float));
-//	centroid(array1, center1);
-//	centroid(array2, center2);
 
 	centroid(a1,ANTS,center1);
 	centroid(a2,ANTS,center2);
@@ -64,12 +61,3 @@ int main(){
 	return 0;
 }
 
-//void centroid(float points[ANTS][3], float *center){
-//	for (int i=0; i<ANTS; i++){
-//		for (int j=0; j<3; j++){
-//			*(center+j) += points[i][j]/(double)ANTS;
-//		}
-//	}
-//
-//	printf("X: %f, Y: %f, Z: %f\n", *(center), *(center+1), *(center+2));
-//}
