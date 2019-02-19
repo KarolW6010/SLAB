@@ -7,6 +7,7 @@
 const int ANTS = 4;			//Number of antennas
 const int GRID_RES = 200;		//Resolution of Music Spectra		
 const int NUM_SAMPLES = 1024;		//Samples per autocorrelation matrix
+const int FRAC_BITS = 43;		//Fractional bits for auto corr numbers
 
 //Function Prototypes
 //void centroid(float points[ANTS][3], float *center);	//Finds centroid of the points
@@ -47,8 +48,17 @@ int main(){
 	centroid(a1,ANTS,center1);
 	centroid(a2,ANTS,center2);
 
-	for (int i=0; i<3; i++){
-		printf("%f\n",*(center1+i));
+	float _Complex *R;
+	R = malloc(ANTS*ANTS*sizeof(float _Complex));
+	float vals[] = {1,2,3,4,5,6,7,8,9,10};
+
+	vec2autocorr(vals,vals,ANTS,R);
+
+	for (int i=0; i<ANTS*ANTS; i++){
+		printf("%f %fj,  ", creal(*(R+i)), cimag(*(R+i)));
+		if ((i+1)%ANTS == 0){
+			printf("\n");
+		}
 	}
 
 	return 0;

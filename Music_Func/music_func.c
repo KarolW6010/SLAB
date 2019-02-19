@@ -57,8 +57,34 @@ float str2val(char bin[], int fracBits){
 	return val;
 }
 
-
-
+void vec2autocorr(float valsReal[], float valsComp[],  int ants, float complex *R){
+/* Returns autocorrelation matrix formed from the values in vals.
+ *
+ * Inputs:
+ * 	valsReal: Array of the real portion of values containing the upper traingular portion
+ * 		  [r11, r12, r13, r22, r23, r33] are the indexes for the 3x3 R case.
+ * 	valsComp: Array of the complex portion of values containing the upper traingular portion
+ * 	ants	: Number of antennas (aka size of square matrix)
+ *
+ * Outputs: 
+ * 	*R	: Pointer to a 2D array of complex values
+ */	
+	float complex temp;
+	for (int i=0; i<ants; i++){
+		for (int j=0; j<ants; j++){
+			if (j>=i){	//Upper triangular
+				int ind = i*ants - i*(i+1)/2 + j;
+				temp = valsReal[ind] + I*valsComp[ind];	//Form the complex number. I is imag unit
+				*(R + ants*i + j) = temp;
+			}	
+			else{		//Lower triangular 
+				int ind = j*ants - j*(j+1)/2 + i;
+				temp = valsReal[ind] - I*valsComp[ind];	//Form the complex number
+				*(R + ants*i + j) = temp;
+			}
+		}
+       	}
+}
 
 
 
