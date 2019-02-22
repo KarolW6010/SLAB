@@ -1,3 +1,3 @@
 music_test.out:
-	gcc -o music_main.out music_main.c music_func.c -lm
+	g++ -o music_main.out music_main.cc music_func.cc -lm
 	./music_main.out

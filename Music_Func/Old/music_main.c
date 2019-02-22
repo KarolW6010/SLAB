@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include "music_func.h"
+#include "Eigen/Dense"
 
 //Global Variables
 const int ANTS = 4;			//Number of antennas
@@ -58,6 +59,25 @@ int main(){
 		}
 	}
 
+	MatrixXcf *eigvecs;
+	MatrixXcf *eigvals;
+
+
+
+	autocorr2eig(R, ANTS, eigvecs, eigvals);
+
 	return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
