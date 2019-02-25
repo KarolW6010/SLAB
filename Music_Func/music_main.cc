@@ -55,6 +55,8 @@ int main(){
 	R =  new float _Complex[ANTS*ANTS];
 	float valsR[] = {.6079,-.174,.0195,.3498,.6065,.1417,-.0273,.5921,-.2394,.6018};
 	float valsC[] = {0,0.0893,-.2822,.3478,0,-.2195,-.0814,0,.2838,0};
+//	float valsR[] = {1,2,3,4,5,6,7,8,9,10};
+//	float valsC[] = {0,2,3,4,0,6,7,0,9,0};
 
 	vec2autocorr(valsR,valsC,ANTS,R);
 
@@ -82,10 +84,12 @@ int main(){
 
 	subspaceMat(eigvals, eigvecs, TAGS, ANTS, subspace);
 
-	MatrixXf *S_music;
+	MatrixXf *S_music, *thetas, *phis;
 	S_music = new MatrixXf;
+	thetas = new MatrixXf;
+	phis = new MatrixXf;
 
-	musicSpectrum(subspace, ANTS, a1, GRID_RES, S_music);
+	musicSpectrum(subspace, ANTS, a1, GRID_RES, S_music, thetas, phis);
 
 	return 0;
 }

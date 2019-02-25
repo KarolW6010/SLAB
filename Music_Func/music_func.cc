@@ -67,7 +67,7 @@ bool comparator(pair <float, int> p1, pair <float, int> p2){
 	return (p1.first > p2.first);
 }
 
-void musicSpectrum(MatrixXcf *subspace, int ants, float *antPos, int gridRes, MatrixXf *S_music){
+void musicSpectrum(MatrixXcf *subspace, int ants, float *antPos, int gridRes, MatrixXf *S_music, MatrixXf *thetas, MatrixXf *phis){
 /*Calculates the music spectrum based on the noise subspace matrix
 
 Inputs:	
@@ -79,6 +79,8 @@ Inputs:
 Outputs:
 	*S_music	: [gridRes][girdRes] matrix containing values of the spectrum
 					theta in first dim, phi in second dim
+	*thetas		: [gridRes][gridRes] matrix containing theta values
+	*phis		: [gridRes][gridRes] matrix containing phis values
 */
 
 	MatrixXcf music_spec(gridRes,gridRes);	//To be filled in and then sent back
@@ -104,11 +106,15 @@ Outputs:
 	MatrixXcf steerRow(1,ants);	//Steering vector
 
 	float th, ph;
+	MatrixXf theta(gridRes,gridRes), phi(gridRes,gridRes);
 
+	MatrixXcf temp1(1,1);
 	for(int i=0; i<gridRes; i++){
 		for(int j=0; j<gridRes; j++){
 			th = -M_PI + i*(2*M_PI)/(float)gridRes;
-			ph = j*(M_PI)/(float)gridRes;
+			ph = j*(M_PI)/(float)(gridRes*2);
+			theta(i,j) = th;
+			phi(i,j) = ph;
 			dir_vec(0,0) = sin(ph)*cos(th);		//ak x component
 			dir_vec(0,1) = sin(ph)*sin(th);		//ak y component
 			dir_vec(0,2) = cos(ph);				//ak z component
@@ -118,16 +124,21 @@ Outputs:
 				steerRow(0,k) = exp(steerRow(0,k));
 			}
 
-			music_spec(i,j) =((steerRow.conjugate())*(*subspace)*(steerRow.transpose()))(0,0);
-			music_spec(i,j) = (float)1.0/music_spec(i,j);
+			temp1(0,0) =((steerRow.conjugate())*(*subspace)*(steerRow.transpose()))(0,0);
+			music_spec(i,j) = (float)1.0/temp1(0,0);
+
+		//	cout << "th: " << th << ", ph: " << ph << ", vect: " << steerRow << endl;
 		}
 	}
 
+	*thetas = theta;
+	*phis = phi;
 	MatrixXf temp(gridRes,gridRes);
 
 	for(int i=0; i<gridRes; i++){
 		for(int j=0; j<gridRes; j++){
 			temp(i,j) = ((float)20)*log10(abs(music_spec(i,j)));
+		//	temp(i,j) = abs(music_spec(i,j));
 			printf("%f\n",temp(i,j));
 		}
 	}
