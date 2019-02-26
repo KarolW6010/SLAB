@@ -19,6 +19,8 @@ int main(){
 
 	float array1[ANTS][3];		//ANTS antennas, (x,y,z) coordinates
 	float array2[ANTS][3];		//^ but for array 2
+	
+	//Array 1
 	array1[0][0] = 0.0;
 	array1[0][1] = 0.0;
 	array1[0][2] = 0.0;
@@ -34,9 +36,26 @@ int main(){
 	array1[3][0] = 1.0;
 	array1[3][1] = 1.0;
 	array1[3][2] = 0.0;
+	
+	//Array 2
+	array2[0][0] = 5.0;
+	array2[0][1] = 5.0;
+	array2[0][2] = 0.0;
 
+	array2[1][0] = 6.0;
+	array2[1][1] = 5.0;
+	array2[1][2] = 0.0;
+
+	array2[2][0] = 5.0;
+	array2[2][1] = 6.0;
+	array2[2][2] = 0.0;
+
+	array2[3][0] = 6.0;
+	array2[3][1] = 6.0;
+	array2[3][2] = 0.0;
 	float *a1, *a2;
 	a1 = new float[ANTS*3];
+	a2 = new float[ANTS*3];
 	a1 = &array1[0][0];
 	a2 = &array2[0][0];
 
@@ -85,11 +104,16 @@ int main(){
 	subspaceMat(eigvals, eigvecs, TAGS, ANTS, subspace);
 
 	MatrixXf *S_music, *thetas, *phis;
-	S_music = new MatrixXf;
-	thetas = new MatrixXf;
-	phis = new MatrixXf;
+	S_music = new MatrixXf;		//Music Spectrum values
+	thetas = new MatrixXf;		//Theta grid
+	phis = new MatrixXf;		//Phi grid
 
 	musicSpectrum(subspace, ANTS, a1, GRID_RES, S_music, thetas, phis);
+	
+	float *thLocs, *phLocs;
+	thLocs = new float[TAGS];	//Theta values corresponding to peaks
+	phLocs = new float[TAGS]; 	//Phi values corresponding to peaks 
+	findPeaks(S_music, thetas, phis, GRID_RES, TAGS, thLocs, phLocs);
 
 	return 0;
 }

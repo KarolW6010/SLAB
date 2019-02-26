@@ -12,6 +12,49 @@ int bitVal(char bit){
 	return val;
 }
 
+void ang2loc(float *antloc1, float th1, float ph1, float *antloc2, float th2, float ph2, int ants, float *dist, float *midpoint){
+/* Reutrns the minimum distance between the two rays pertruding from the center of the antenna arrays specified by the angles.
+
+Inputs:
+	*antloc	: [ANTS][3] Contains the coordiantes of an antenna array
+	th		: theta value corresponding to array
+	ph 		: phi value corresponding to array
+	ants	: number of antennas (ANTS)
+
+Outputs:
+	*dist	: Minimum distance between the two rays
+	*midpoint	: Midpoint between the two lines
+*/
+
+	float *c1, *c2;
+	c1 = new float[3];	//Center of array 1
+	c2 = new float[3];	//Center of array 2
+
+	centroid(antloc1, ants, c1);
+	centroid(antloc2, ants, c2);
+
+	//Store centers in vector objects
+	MatrixXf center1(1,3), center2(1,3);
+	for(int i=0; i<3; i++){
+		center1(0,i) = *(c1+i);
+		center2(0,i) = *(c2+i);
+	}
+
+	MatrixXf dir1(1,3), dir2(1,3); 	//Direction of ray
+	dir1(0,0) = cos(th1);	//x component
+	dir1(0,1) = sin(th1);	//y component
+	dir1(0,2) = cos(ph1);	//z component
+	dir2(0,0) = cos(th2);	//x component
+	dir2(0,1) = sin(th2);	//y component
+	dir2(0,2) = cos(ph2);	//z component
+
+	MatrixXf nor1(1,3), nor2(1,3), distNor(1,3);	//Normal vectors
+	nor1 = dir1.cross(dir2.cross(dir1));		//For center calc
+	nor2 = dir2.cross(dir1.cross(dir2));		//For center calc
+	distNor = (dir1.cross(dir2)).normalized();	//For distance calc
+
+}
+
 void autocorr2eig(float _Complex *R, int ants, MatrixXcf *eigmat, MatrixXf *eigvals){
 /*Takes an autocorrelation matrix and returns the eigenvectors and eigenvalues.
 
@@ -65,6 +108,121 @@ void centroid(float *points, int ants, float *center){
 
 bool comparator(pair <float, int> p1, pair <float, int> p2){
 	return (p1.first > p2.first);
+}
+
+void findPeaks(MatrixXf *S_music, MatrixXf *th, MatrixXf *ph, int gridRes, int tags, float *thetas, float *phis){
+/* Find the theta and phi values of the peaks of the Music Spectrum.
+ * 
+ * Inputs: 
+ * 	*S_music: Music spectrum
+ *  *th		: Theta value grid
+ *  *ph 	: Phi value grid
+ *	gridRes	: Resolution of the grid
+ *  tags	: Number of tags present (aka peaks to search for)
+ * 
+ * Outputs:
+ * 	*thetas	: theta values of the peaks
+ *  *phis	: phi values of the peals  
+ */
+
+	bool isPeak = false;
+	int im, ip, jm, jp, k;
+	im = 0;		//Previous Row
+	ip = 0;		//Next Row
+	jm = 0;		//Previous Column
+	jp = 0;		//Next Column
+	k = 0;
+
+	float peaks[gridRes*gridRes];
+	float thTemp[gridRes*gridRes];
+	float phTemp[gridRes*gridRes];
+
+	for(int i=0; i<gridRes; i++){
+		for(int j=0; j<gridRes; j++){
+			//Handle edge cases for rows
+			if(i==0){
+				im = 0;
+				ip = 1;
+			}
+			else if(i == (gridRes-1)){
+				im = i-1;
+				ip = gridRes-1;
+			}
+			else{
+				im = i-1;
+				ip = i+1;
+			}
+
+			//Handle edge cases for rows
+			if(j==0){
+				jm = 0;
+				jp = 1;
+			}
+			else if(j == (gridRes-1)){
+				jm = j-1;
+				jp = gridRes-1;
+			}
+			else{
+				jm = j-1;
+				jp = j+1;
+			}
+
+			//Check if current value is larger or equal to neighbors
+			isPeak = ((*S_music)(im,j)<=(*S_music)(i,j))
+				   & ((*S_music)(i,jm)<=(*S_music)(i,j))
+				   & ((*S_music)(ip,j)<=(*S_music)(i,j))
+				   & ((*S_music)(i,jp)<=(*S_music)(i,j));
+
+			//Store peak value and corresponding theta and phi
+			if(isPeak){
+				peaks[k] = (*S_music)(i,j);
+				thTemp[k] = (*th)(i,j);
+				phTemp[k] = (*ph)(i,j);
+
+				if(thTemp[k] > 0){
+					thTemp[k] = thTemp[k] - M_PI;
+				}
+				else{
+					thTemp[k] = thTemp[k] + M_PI;
+				}
+
+				cout << "Peak " << k <<" found! Val: " << peaks[k] << ", th: " << thTemp[k] << ", ph: " << phTemp[k] << endl;
+				k++;
+			}
+		}
+	}
+	
+	//Sort the peaks so that highest peak is first (Stronget Signal)
+	pair <float, int> locs[k];
+	for(int i=0; i<k; i++){
+		locs[i].first = peaks[i];
+		locs[i].second = i;
+	}
+	int n = sizeof(locs)/sizeof(locs[0]);
+	std::sort(locs,locs+n,comparator);
+
+	for(int i=0; i<k; i++){
+		cout << "value: " << locs[i].first << " , Position: " << locs[i].second << endl;
+	}
+
+	//Take the n largest peaks where n is the number of tags;
+	float ordTh[tags];		//Ordered thetas
+	float ordPh[tags];		//Ordered phis
+
+	for(int i=0; i<tags; i++){
+		cout << "Location index: " << locs[i].second << endl;
+		cout <<"\t TH: " << thTemp[locs[i].second] << endl;
+		cout <<"\t PH: " << phTemp[locs[i].second] << endl;
+		ordTh[i] = thTemp[locs[i].second];
+		ordPh[i] = phTemp[locs[i].second];
+	}
+
+	thetas = ordTh;
+	phis = ordPh;
+
+	for(int i=0; i<tags; i++){
+		cout << "ThPh" << i << ": " << ordTh[i] << ", " << ordPh[i] << endl;
+	}
 }
 
 void musicSpectrum(MatrixXcf *subspace, int ants, float *antPos, int gridRes, MatrixXf *S_music, MatrixXf *thetas, MatrixXf *phis){
