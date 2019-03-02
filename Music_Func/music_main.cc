@@ -9,7 +9,12 @@ const int ANTS = 4;					//Number of antennas
 const int GRID_RES = 200;			//Resolution of Music Spectra		
 const int NUM_SAMPLES = 1024;		//Samples per autocorrelation matrix
 const int FRAC_BITS = 43;			//Fractional bits for auto corr numbers
-const int TAGS = 2;					//Number of tags
+const int TAGS = 1;					//Number of tags
+const float FREQ = 915000000;		//Tag freq
+const float DOL = 1;				//Distance over lambda
+const float LAMBDA = 300000000/FREQ;	//Wavelength
+const float D = DOL*LAMBDA;				//Distance
+
 
 //Function Prototypes
 
@@ -53,67 +58,101 @@ int main(){
 	array2[3][0] = 6.0;
 	array2[3][1] = 6.0;
 	array2[3][2] = 0.0;
+
+	//Scale appropriately
+	for(int i=0; i<ANTS; i++){
+		for(int j=0; j<3; j++){
+			array1[i][j] = array1[i][j]*D;
+			array2[i][j] = array2[i][j]*D;
+			cout << "Array 1: " << array1[i][j] << ", Array 2: " << array2[i][j] << endl;
+		}
+		cout << endl;
+	}
+
 	float *a1, *a2;
 	a1 = new float[ANTS*3];
 	a2 = new float[ANTS*3];
 	a1 = &array1[0][0];
 	a2 = &array2[0][0];
 
-	cout << "Ant_locs: " << &a1 << endl;
-	cout << "ant_locs: " << &a1 << endl;
-
 	//Find centers of array 1 and 2
 	float *center1, *center2;
 	center1 = new float[3];
 	center2 = new float[3];
 
-//	centroid(a1,ANTS,center1);
-//	centroid(a2,ANTS,center2);
+	float _Complex *R1, *R2;
+	R1 = new float _Complex[ANTS*ANTS];
+	R2 = new float _Complex[ANTS*ANTS];
 
-	float _Complex *R;
-	R =  new float _Complex[ANTS*ANTS];
-	float valsR[] = {.6079,-.174,.0195,.3498,.6065,.1417,-.0273,.5921,-.2394,.6018};
-	float valsC[] = {0,0.0893,-.2822,.3478,0,-.2195,-.0814,0,.2838,0};
-//	float valsR[] = {1,2,3,4,5,6,7,8,9,10};
-//	float valsC[] = {0,2,3,4,0,6,7,0,9,0};
-
-	vec2autocorr(valsR,valsC,ANTS,R);
-
-/*
-	for (int i=0; i<ANTS*ANTS; i++){
-		printf("%f %fj,  ", creal(*(R+i)), cimag(*(R+i)));
-		if ((i+1)%ANTS == 0){
-			printf("\n");
-		}
-	}
-*/
-
-	printf("\nEigen Stuff: \n");
-
-	MatrixXcf *eigvecs;
-	MatrixXf *eigvals;
-	eigvecs = new MatrixXcf;
-	eigvals = new MatrixXf;
-
-
-	autocorr2eig(R, ANTS, eigvecs, eigvals);
-
-	MatrixXcf *subspace;
-	subspace = new MatrixXcf;
-
-	subspaceMat(eigvals, eigvecs, TAGS, ANTS, subspace);
-
-	MatrixXf *S_music, *thetas, *phis;
-	S_music = new MatrixXf;		//Music Spectrum values
-	thetas = new MatrixXf;		//Theta grid
-	phis = new MatrixXf;		//Phi grid
-
-	musicSpectrum(subspace, ANTS, a1, GRID_RES, S_music, thetas, phis);
+	//Autocorrelation for array 1
+	float valsR1[] = {.6026,.3498,.3638,.1139,.6124,.4599,.3854,.6196,.3683,.6152};
+	float valsC1[] = {.0000,.3235,.1615,.2451,.0000,-.1605,.1476,.000,.3178,.0000};
 	
-	float *thLocs, *phLocs;
-	thLocs = new float[TAGS];	//Theta values corresponding to peaks
-	phLocs = new float[TAGS]; 	//Phi values corresponding to peaks 
-	findPeaks(S_music, thetas, phis, GRID_RES, TAGS, thLocs, phLocs);
+	//Autocorrelation for array 2
+	float valsR2[] = {.5885,.2175,.3044,-.0951,.6185,.4629,.3360,.6093,.2485,.6073};
+	float valsC2[] = {.0000,.4342,.2975,.3637,.0000,-.1550,.3082,.0000,.4405,.0000};
+
+	vec2autocorr(valsR1,valsC1,ANTS,R1);
+	vec2autocorr(valsR2,valsC2,ANTS,R2);
+
+	MatrixXcf *eigvecs1, *eigvecs2;
+	MatrixXf *eigvals1, *eigvals2;
+	eigvecs1 = new MatrixXcf;
+	eigvecs2 = new MatrixXcf;
+	eigvals1 = new MatrixXf;
+	eigvals2 = new MatrixXf;
+
+	autocorr2eig(R1, ANTS, eigvecs1, eigvals1);
+	autocorr2eig(R2, ANTS, eigvecs2, eigvals2);
+
+	MatrixXcf *subspace1, *subspace2;
+	subspace1 = new MatrixXcf;
+	subspace2 = new MatrixXcf;
+
+	subspaceMat(eigvals1, eigvecs1, TAGS, ANTS, subspace1);
+	subspaceMat(eigvals2, eigvecs2, TAGS, ANTS, subspace2);
+
+	MatrixXf *S_music1, *thetas1, *phis1;
+	S_music1 = new MatrixXf;		//Music Spectrum values
+	thetas1 = new MatrixXf;		//Theta grid
+	phis1 = new MatrixXf;		//Phi grid
+	
+	MatrixXf *S_music2, *thetas2, *phis2;
+	S_music2 = new MatrixXf;		//Music Spectrum values
+	thetas2 = new MatrixXf;		//Theta grid
+	phis2 = new MatrixXf;		//Phi grid
+
+	musicSpectrum(subspace1, ANTS, a1, GRID_RES, S_music1, thetas1, phis1);
+	musicSpectrum(subspace2, ANTS, a2, GRID_RES, S_music2, thetas2, phis2);
+	
+	float *thLocs1, *phLocs1;
+	thLocs1 = new float[TAGS];	//Theta values corresponding to peaks
+	phLocs1 = new float[TAGS]; 	//Phi values corresponding to peaks 
+	findPeaks(S_music1, thetas1, phis1, GRID_RES, TAGS, thLocs1, phLocs1);
+
+	float *thLocs2, *phLocs2;
+	thLocs2 = new float[TAGS];	//Theta values corresponding to peaks
+	phLocs2 = new float[TAGS]; 	//Phi values corresponding to peaks 
+	findPeaks(S_music2, thetas2, phis2, GRID_RES, TAGS, thLocs2, phLocs2);
+
+	float *dist;
+	dist = new float;
+	Vector3f *midpoint;
+	midpoint = new Vector3f;
+
+//	cout << "\nBefore Func: Th1 = " << thLocs1[0] << ", Ph1 = " << phLocs1[0]
+//		 << "\nBefore Func: Th2 = " << thLocs2[0] << ", Ph2 = " << phLocs2[0] << endl;
+
+//	ang2loc(a1,*thLocs1,*phLocs1,a2,*thLocs2,*phLocs2,ANTS,dist,midpoint);
+
+//	cout << "Midpoint:\n" << *midpoint << endl;
+//	cout << "Distance = " << *dist << endl;
+
+	Vector3f *locations;
+	locations = new Vector3f[TAGS];
+	bestLocal(a1,thLocs1,phLocs1,a2,thLocs2,phLocs2,ANTS,TAGS,locations);
+
+	cout << "\n\nLocations:\n" << *locations << endl;
 
 	return 0;
 }

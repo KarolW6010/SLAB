@@ -12,7 +12,7 @@ int bitVal(char bit){
 	return val;
 }
 
-void ang2loc(float *antloc1, float th1, float ph1, float *antloc2, float th2, float ph2, int ants, float *dist, float *midpoint){
+void ang2loc(float *antloc1, float th1, float ph1, float *antloc2, float th2, float ph2, int ants, float *dist, Vector3f *midpoint){
 /* Reutrns the minimum distance between the two rays pertruding from the center of the antenna arrays specified by the angles.
 
 Inputs:
@@ -34,25 +34,48 @@ Outputs:
 	centroid(antloc2, ants, c2);
 
 	//Store centers in vector objects
-	MatrixXf center1(1,3), center2(1,3);
+	Vector3f center1, center2;
 	for(int i=0; i<3; i++){
-		center1(0,i) = *(c1+i);
-		center2(0,i) = *(c2+i);
+		center1(i) = *(c1+i);
+		center2(i) = *(c2+i);
 	}
 
-	MatrixXf dir1(1,3), dir2(1,3); 	//Direction of ray
-	dir1(0,0) = cos(th1);	//x component
-	dir1(0,1) = sin(th1);	//y component
-	dir1(0,2) = cos(ph1);	//z component
-	dir2(0,0) = cos(th2);	//x component
-	dir2(0,1) = sin(th2);	//y component
-	dir2(0,2) = cos(ph2);	//z component
+//	cout << "\nAngles1: Th = " << th1 << ", Ph = " << ph1 << endl;
+//	cout << "\nAngles2: Th = " << th2 << ", Ph = " << ph2 << endl;
 
-	MatrixXf nor1(1,3), nor2(1,3), distNor(1,3);	//Normal vectors
+	Vector3f dir1, dir2; 	//Direction of ray
+	dir1(0) = cos(th1);		//x component
+	dir1(1) = sin(th1);		//y component
+	dir1(2) = cos(ph1)/sin(ph1);	//z component
+	dir2(0) = cos(th2);		//x component
+	dir2(1) = sin(th2);		//y component
+	dir2(2) = cos(ph2)/sin(ph2);	//z component
+
+//	cout << "\nDirection 1:\n" << dir1 << endl;
+//	cout << "\nDirection 2:\n" << dir2 << endl;
+
+	Vector3f nor1, nor2, distNor;		//Normal vectors
 	nor1 = dir1.cross(dir2.cross(dir1));		//For center calc
 	nor2 = dir2.cross(dir1.cross(dir2));		//For center calc
 	distNor = (dir1.cross(dir2)).normalized();	//For distance calc
+	
+//	cout << "\nNormal 1:\n" << nor1 << endl;
+//	cout << "\nNormal 2:\n" << nor2 << endl;
+//	cout << "\nDistance Normal:\n" << distNor << endl;
 
+	float distance = abs(distNor.dot(center1-center2));		//Distance between 2 skew lines
+	*dist = distance;
+
+	Vector3f point1,  point2; 	//Points on line1 and line2 closest to line 2 and line 1 respectively
+	point1 = center1 + ((center2-center1).dot(nor2)/dir1.dot(nor2))*dir1;
+	point2 = center2 + ((center1-center2).dot(nor1)/dir2.dot(nor1))*dir2;
+
+//	cout << "\nPoint 1:\n" << point1 << endl;
+//	cout << "\nPoint 2:\n" << point2 << endl;
+
+	Vector3f mid;
+	mid = (point1+point2)/(float)(2);
+	*midpoint = mid;
 }
 
 void autocorr2eig(float _Complex *R, int ants, MatrixXcf *eigmat, MatrixXf *eigvals){
@@ -77,10 +100,55 @@ Inputs:
 	*eigvals = es.eigenvalues();
 	*eigmat = es.eigenvectors();
 
-	std::cout << "Eigen Values: \n" << *eigvals << std::endl;
-	std::cout << "\nEigen Vectors: \n" << *eigmat << std::endl;
-	std::cout << "\nLambda*v: \n" << (*eigvals)(0)*((*eigmat).col(0)) << std::endl;
-	std::cout << "\nR*eig: \n" << (Rmat)*((*eigmat).col(0)) << std::endl;
+//	std::cout << "Eigen Values: \n" << *eigvals << std::endl;
+//	std::cout << "\nEigen Vectors: \n" << *eigmat << std::endl;
+//	std::cout << "\nLambda*v: \n" << (*eigvals)(0)*((*eigmat).col(0)) << std::endl;
+//	std::cout << "\nR*eig: \n" << (Rmat)*((*eigmat).col(0)) << std::endl;
+}
+
+void bestLocal(float *antloc1, float *thLocs1, float *phLocs1, float *antloc2, float *thLocs2, float *phLocs2, int ants, int tags, Vector3f *locations){
+
+	vector <int> avail;		//Unpaired AOA indices
+	pair <int,int> matches[tags];
+
+	for(int i=0; i<tags; i++){
+		matches[i].first = i;
+		avail.push_back(i);
+	}
+
+	float minDist = FLT_MAX;	//Smallest distance found so far
+	float *dist;				//Current distance found
+	dist = new float;		
+	Vector3f *midpoint;			//Current localized point
+	midpoint = new Vector3f;
+	Vector3f *loc;				//Best localized point
+	loc = new Vector3f;
+	int bestInd;				//Index of best match
+
+	Vector3f locals[tags];		//Array of tags locations
+
+	for(int i=0; i<tags; i++){
+		for(int j=0; j<tags-i; j++){
+			ang2loc(antloc1,*(thLocs1+i),*(phLocs1+i),antloc2,
+				*(thLocs2+avail.at(j)),*(phLocs2+avail.at(j)),ants,dist,midpoint);
+			if(*dist < minDist){
+				minDist = *dist;
+				bestInd = j;
+				loc = midpoint;
+
+			//	cout << "MIDPOINT " << *midpoint << endl;
+			};
+		}
+		matches[i].second = avail.at(bestInd);
+		avail.erase(avail.begin()+bestInd);
+		locals[i] = *loc;
+	}
+
+	*locations = locals[0];
+
+	for(int i=0; i<tags; i++){
+		cout << "Matches: " << matches[i].first << " and " << matches[i].second << endl;
+	}
 }
 
 void centroid(float *points, int ants, float *center){
@@ -96,14 +164,14 @@ void centroid(float *points, int ants, float *center){
  	*center = 0.0;
 	*(center+1) = 0.0;
 	*(center+2) = 0.0;
- 	cout << "AAAA: " << &points << endl;
+// 	cout << "AAAA: " << &points << endl;
 	for (int i=0; i<ants; i++){
 		for (int j=0; j<3; j++){
 				*(center+j) += *(points + 3*i + j)/(double)ants;
 		}
 	}
 	
-	printf("X: %f, Y: %f, Z: %f\n", *(center), *(center+1), *(center+2));
+//	printf("X: %f, Y: %f, Z: %f\n", *(center), *(center+1), *(center+2));
 }
 
 bool comparator(pair <float, int> p1, pair <float, int> p2){
@@ -174,21 +242,38 @@ void findPeaks(MatrixXf *S_music, MatrixXf *th, MatrixXf *ph, int gridRes, int t
 				   & ((*S_music)(i,jp)<=(*S_music)(i,j));
 
 			//Store peak value and corresponding theta and phi
+			bool isok = true;
+			float differ;
 			if(isPeak){
-				peaks[k] = (*S_music)(i,j);
-				thTemp[k] = (*th)(i,j);
-				phTemp[k] = (*ph)(i,j);
-
-				if(thTemp[k] > 0){
-					thTemp[k] = thTemp[k] - M_PI;
+				for(int n=0; n<k; n++){
+					float tempth;
+					if(thTemp[n] > 0){
+						tempth = thTemp[n] - M_PI;
+					}
+					else{
+						tempth = thTemp[n] + M_PI;
+					}
+					differ = abs(tempth-(*th)(i,j)) + abs(phTemp[n]-(*ph)(i,j));
+			//		cout << "Differ = " << differ << ", k = " << k << endl;
+					isok = isok && (differ > oneNorm);
 				}
-				else{
-					thTemp[k] = thTemp[k] + M_PI;
-				}
+				if(isok){
+			//		cout << "End my misery!\n";
+					peaks[k] = (*S_music)(i,j);
+					thTemp[k] = (*th)(i,j);
+					phTemp[k] = (*ph)(i,j);
 
-				cout << "Peak " << k <<" found! Val: " << peaks[k] << ", th: " << thTemp[k] << ", ph: " << phTemp[k] << endl;
-				k++;
+					if(thTemp[k] > 0){
+						thTemp[k] = thTemp[k] - M_PI;
+					}
+					else{
+						thTemp[k] = thTemp[k] + M_PI;
+					}
+					k++;
+				}
 			}
+
+//				cout << "Peak " << k <<" found! Val: " << peaks[k] << ", th: " << thTemp[k] << ", ph: " << phTemp[k] << endl;
 		}
 	}
 	
@@ -201,28 +286,41 @@ void findPeaks(MatrixXf *S_music, MatrixXf *th, MatrixXf *ph, int gridRes, int t
 	int n = sizeof(locs)/sizeof(locs[0]);
 	std::sort(locs,locs+n,comparator);
 
+	float allOrdTh[k], allOrdPh[k];
+	for(int i=0; i<k; i++){
+		allOrdTh[i] = thTemp[locs[i].second];
+		allOrdPh[i] = phTemp[locs[i].second];
+	}
+
+	//The above two for loops organize all the peaks and corresponding in angles in
+	//order of highest peaks to lowest peaks.
+
+
+/*
 	for(int i=0; i<k; i++){
 		cout << "value: " << locs[i].first << " , Position: " << locs[i].second << endl;
 	}
-
+*/
 	//Take the n largest peaks where n is the number of tags;
 	float ordTh[tags];		//Ordered thetas
 	float ordPh[tags];		//Ordered phis
 
 	for(int i=0; i<tags; i++){
 		cout << "Location index: " << locs[i].second << endl;
-		cout <<"\t TH: " << thTemp[locs[i].second] << endl;
-		cout <<"\t PH: " << phTemp[locs[i].second] << endl;
+		cout <<"\t TH: " << thTemp[locs[i].second]*(180/M_PI) << endl;
+		cout <<"\t PH: " << phTemp[locs[i].second]*(180/M_PI) << endl;
 		ordTh[i] = thTemp[locs[i].second];
 		ordPh[i] = phTemp[locs[i].second];
 	}
 
-	thetas = ordTh;
-	phis = ordPh;
+	*thetas = ordTh[0];
+	*phis = ordPh[0];
 
+/*
 	for(int i=0; i<tags; i++){
 		cout << "ThPh" << i << ": " << ordTh[i] << ", " << ordPh[i] << endl;
 	}
+*/
 }
 
 void musicSpectrum(MatrixXcf *subspace, int ants, float *antPos, int gridRes, MatrixXf *S_music, MatrixXf *thetas, MatrixXf *phis){
@@ -245,11 +343,11 @@ Outputs:
 
 	float *center;
 	center = new float[3];
-	cout << "Antpos: " <<  &antPos << endl;
-	printf("Center %f, %f, %f\n", *center, *(center+1), *(center+2));
+//	cout << "Antpos: " <<  &antPos << endl;
+//	printf("Center %f, %f, %f\n", *center, *(center+1), *(center+2));
 	centroid(antPos, ants, center);
 
-	printf("Center %f, %f, %f\n", *center, *(center+1), *(center+2));
+//	printf("Center %f, %f, %f\n", *center, *(center+1), *(center+2));
 
 	MatrixXf centered(3,ants);	//Shifted antPos by center
 	for(int i=0; i<ants; i++){
@@ -258,7 +356,7 @@ Outputs:
 		}
 	}
 
-	cout << "Ant_locs\n" <<  centered << endl;
+//	cout << "Ant_locs\n" <<  centered << endl;
 	
 	MatrixXf dir_vec(1,3);		//Directional Vector
 	MatrixXcf steerRow(1,ants);	//Steering vector
@@ -297,7 +395,7 @@ Outputs:
 		for(int j=0; j<gridRes; j++){
 			temp(i,j) = ((float)20)*log10(abs(music_spec(i,j)));
 		//	temp(i,j) = abs(music_spec(i,j));
-			printf("%f\n",temp(i,j));
+//			printf("%f\n",temp(i,j));
 		}
 	}
 	*S_music = temp;
@@ -349,11 +447,12 @@ Ouputs:
 	int n = sizeof(lambs)/sizeof(lambs[0]);
 	std::sort(lambs,lambs+n,comparator);
 
+/*
 	for(int i=0; i<ants; i++){
 		cout << "Lambs at " << i << ": First  " << lambs[i].first
 			 << ", Second " << lambs[i].second << endl;
 	}
-
+*/
 	MatrixXcf subs(ants, ants-tags);
 
 	for(int i=0; i<ants-tags; i++){
@@ -363,7 +462,7 @@ Ouputs:
 
 	(*subspace) = subs*subs.adjoint();
 
-	std::cout << "\nSubs :\n" << *subspace << std::endl;
+//	std::cout << "\nSubs :\n" << *subspace << std::endl;
 }
 
 void vec2autocorr(float valsReal[], float valsComp[],  int ants, float _Complex *R){
