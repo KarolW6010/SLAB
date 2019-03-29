@@ -192,138 +192,175 @@ void findPeaks(MatrixXf *S_music, MatrixXf *th, MatrixXf *ph, int gridRes, int t
  * 	*thetas	: theta values of the peaks
  *  *phis	: phi values of the peals  
  */
+	if(tags == 1){
+		float thMax;
+		float phMax;
+		float maxPeak = FLT_MIN;
 
-	bool isPeak = false;
-	int im, ip, jm, jp, k;
-	im = 0;		//Previous Row
-	ip = 0;		//Next Row
-	jm = 0;		//Previous Column
-	jp = 0;		//Next Column
-	k = 0;
+		for(int i=0; i<gridRes; i++){
+			for(int j=0; j<gridRes; j++){
+				if((*S_music)(i,j) > maxPeak){
+					thMax = (*th)(i,j);
+					phMax = (*ph)(i,j);
+					maxPeak = (*S_music)(i,j);
+				}
+			}
+		}
+		*thetas = thMax;
+		*phis = phMax;
 
-	float peaks[gridRes*gridRes];
-	float thTemp[gridRes*gridRes];
-	float phTemp[gridRes*gridRes];
+	}
+	else{
+	
+		bool isPeak = false;
+		int im, ip, jm, jp, k;
+		im = 0;		//Previous Row
+		ip = 0;		//Next Row
+		jm = 0;		//Previous Column
+		jp = 0;		//Next Column
+		k = 0;
 
-	for(int i=0; i<gridRes; i++){
-		for(int j=0; j<gridRes; j++){
+		float peaks[gridRes*gridRes];
+		float thTemp[gridRes*gridRes];
+		float phTemp[gridRes*gridRes];
+
+		for(int i=0; i<gridRes; i++){		//Theta loop (rows constant)		
 			//Handle edge cases for rows
 			if(i==0){
-				im = 0;
+				im = gridRes-1;		//Wrap around on the theta
 				ip = 1;
 			}
 			else if(i == (gridRes-1)){
-				im = i-1;
-				ip = gridRes-1;
+				im = i-1;			
+				ip = 0;				//Wrap around on the theta
 			}
 			else{
 				im = i-1;
 				ip = i+1;
 			}
-
-			//Handle edge cases for rows
-			if(j==0){
-				jm = 0;
-				jp = 1;
-			}
-			else if(j == (gridRes-1)){
-				jm = j-1;
-				jp = gridRes-1;
-			}
-			else{
-				jm = j-1;
-				jp = j+1;
-			}
-
-			//Check if current value is larger or equal to neighbors
-			isPeak = ((*S_music)(im,j)<=(*S_music)(i,j))
-				   & ((*S_music)(i,jm)<=(*S_music)(i,j))
-				   & ((*S_music)(ip,j)<=(*S_music)(i,j))
-				   & ((*S_music)(i,jp)<=(*S_music)(i,j));
-
-			//Store peak value and corresponding theta and phi
-			bool isok = true;
-			float differ;
-			if(isPeak){
-				for(int n=0; n<k; n++){
-					float tempth;
-					if(thTemp[n] > 0){
-						tempth = thTemp[n] - M_PI;
-					}
-					else{
-						tempth = thTemp[n] + M_PI;
-					}
-					differ = abs(tempth-(*th)(i,j)) + abs(phTemp[n]-(*ph)(i,j));
-			//		cout << "Differ = " << differ << ", k = " << k << endl;
-					isok = isok && (differ > oneNorm);
+		
+			for(int j=0; j<gridRes; j++){	//Phi loop (cols constant)
+				//Handle edge cases for rows
+				if(j==0){
+					jm = 0;
+					jp = 1;
 				}
-				if(isok){
-			//		cout << "End my misery!\n";
-					peaks[k] = (*S_music)(i,j);
-					thTemp[k] = (*th)(i,j);
-					phTemp[k] = (*ph)(i,j);
-
-					if(thTemp[k] > 0){
-						thTemp[k] = thTemp[k] - M_PI;
-					}
-					else{
-						thTemp[k] = thTemp[k] + M_PI;
-					}
-					k++;
+				else if(j == (gridRes-1)){
+					jm = j-1;
+					jp = gridRes-1;
 				}
-			}
+				else{
+					jm = j-1;
+					jp = j+1;
+				}
 
-//				cout << "Peak " << k <<" found! Val: " << peaks[k] << ", th: " << thTemp[k] << ", ph: " << phTemp[k] << endl;
+				//Check if current value is larger or equal to neighbors
+				isPeak = ((*S_music)(im,j)<=(*S_music)(i,j))
+					   & ((*S_music)(i,jm)<=(*S_music)(i,j))
+					   & ((*S_music)(ip,j)<=(*S_music)(i,j))
+					   & ((*S_music)(i,jp)<=(*S_music)(i,j));
+
+				//Store peak value and corresponding theta and phi
+				bool isok = true;
+				float differ;
+				if(isPeak){
+					for(int n=0; n<k; n++){
+	//					float tempth = thTemp[n];
+	//					if(thTemp[n] > 0){
+	//						tempth = thTemp[n] - M_PI;
+	//					}
+	//					else{
+	//						tempth = thTemp[n] + M_PI;
+	//					}
+						differ = abs(thTemp[n]-(*th)(i,j)) + abs(phTemp[n]-(*ph)(i,j));
+				//		cout << "Differ = " << differ << ", k = " << k << endl;
+						isok = isok && (differ > oneNorm);
+					}
+
+					if((*th)(i,j) < (-M_PI + oneNorm)){
+						for(int n=0; n<k; n++){
+							differ = abs(thTemp[n] + (float)(2.0*M_PI) - (*th)(i,j)
+										+ abs(phTemp[n] - (*ph)(i,j)));
+							isok = isok && (differ > oneNorm);	
+						}
+					}
+					else if((*th)(i,j) < (M_PI - oneNorm)){
+						for(int n=0; n<k; n++){
+							differ = abs(thTemp[n] - (float)(2.0*M_PI) - (*th)(i,j)
+										+ abs(phTemp[n] - (*ph)(i,j)));
+							isok = isok && (differ > oneNorm);
+						}
+					}
+
+					if(isok){
+				//		cout << "End my misery!\n";
+						peaks[k] = (*S_music)(i,j);
+						thTemp[k] = (*th)(i,j);
+						phTemp[k] = (*ph)(i,j);
+
+	//					if(thTemp[k] > 0){
+	//						thTemp[k] = thTemp[k] - M_PI;
+	//					}
+	//					else{
+	//						thTemp[k] = thTemp[k] + M_PI;
+	//					}
+						k++;
+					}
+				}
+
+		//				cout << "Peak " << k <<" found! Val: " << peaks[k] << ", th: " << thTemp[k] << ", ph: " << phTemp[k] << endl;
+			}
 		}
-	}
-	
-	//Sort the peaks so that highest peak is first (Stronget Signal)
-	pair <float, int> locs[k];
-	for(int i=0; i<k; i++){
-		locs[i].first = peaks[i];
-		locs[i].second = i;
-	}
-	int n = sizeof(locs)/sizeof(locs[0]);
-	std::sort(locs,locs+n,comparator);
 
-	float allOrdTh[k], allOrdPh[k];
-	for(int i=0; i<k; i++){
-		allOrdTh[i] = thTemp[locs[i].second];
-		allOrdPh[i] = phTemp[locs[i].second];
-	}
+		//Sort the peaks so that highest peak is first (Stronget Signal)
+		pair <float, int> locs[k];
+		for(int i=0; i<k; i++){
+			locs[i].first = peaks[i];
+			locs[i].second = i;
+		}
+		int n = sizeof(locs)/sizeof(locs[0]);
+		std::sort(locs,locs+n,comparator);
 
-	//The above two for loops organize all the peaks and corresponding in angles in
-	//order of highest peaks to lowest peaks.
+		float allOrdTh[k], allOrdPh[k];
+		for(int i=0; i<k; i++){
+			allOrdTh[i] = thTemp[locs[i].second];
+			allOrdPh[i] = phTemp[locs[i].second];
+		}
+
+		//The above two for loops organize all the peaks and corresponding in angles in
+		//order of highest peaks to lowest peaks.
 
 
-/*
-	for(int i=0; i<k; i++){
-		cout << "value: " << locs[i].first << " , Position: " << locs[i].second << endl;
-	}
-*/
-	//Take the n largest peaks where n is the number of tags;
-	float ordTh[tags];		//Ordered thetas
-	float ordPh[tags];		//Ordered phis
+		/*
+		for(int i=0; i<k; i++){
+			cout << "value: " << locs[i].first << " , Position: " << locs[i].second << endl;
+		}
+		*/
+		//Take the n largest peaks where n is the number of tags;
+		float ordTh[tags];		//Ordered thetas
+		float ordPh[tags];		//Ordered phis
 
-	for(int i=0; i<tags; i++){
-		cout << "Location index: " << locs[i].second << endl;
-		cout <<"\t TH: " << thTemp[locs[i].second]*(180/M_PI) << endl;
-		cout <<"\t PH: " << phTemp[locs[i].second]*(180/M_PI) << endl;
-		ordTh[i] = thTemp[locs[i].second];
-		ordPh[i] = phTemp[locs[i].second];
-	}
 
-	*thetas = ordTh[0];
-	*phis = ordPh[0];
+		for(int i=0; i<tags; i++){
+//			cout << "Location index: " << locs[i].second << endl;
+//			cout <<"\t TH: " << thTemp[locs[i].second]*(180/M_PI) << endl;
+//			cout <<"\t PH: " << phTemp[locs[i].second]*(180/M_PI) << endl;
+			ordTh[i] = thTemp[locs[i].second];
+			ordPh[i] = phTemp[locs[i].second];
+		}
 
-/*
-	for(int i=0; i<tags; i++){
-		cout << "ThPh" << i << ": " << ordTh[i] << ", " << ordPh[i] << endl;
-	}
-*/
+		*thetas = ordTh[0];
+		*phis = ordPh[0];
+
+		/*
+		for(int i=0; i<tags; i++){
+			cout << "ThPh" << i << ": " << ordTh[i] << ", " << ordPh[i] << endl;
+		}
+		*/
+	}	
 }
 
-void musicSpectrum(MatrixXcf *subspace, int ants, float *antPos, int gridRes, MatrixXf *S_music, MatrixXf *thetas, MatrixXf *phis){
+void musicSpectrum(MatrixXcf *subspace, int ants, float *antPos, int gridRes, float lambda, MatrixXf *S_music, MatrixXf *thetas, MatrixXf *phis){
 /*Calculates the music spectrum based on the noise subspace matrix
 
 Inputs:	
@@ -331,6 +368,7 @@ Inputs:
 	ants		: Number of antennas
 	*antPos		: [ants][3] pointer to antenna coordinates
 	gridRes 	: Resolution of music spectrum
+	lambda 		: Wavelength
 
 Outputs:
 	*S_music	: [gridRes][girdRes] matrix containing values of the spectrum
@@ -364,6 +402,7 @@ Outputs:
 	float th, ph;
 	MatrixXf theta(gridRes,gridRes), phi(gridRes,gridRes);
 
+	float kwav = 2.0*M_PI/lambda;
 	MatrixXcf temp1(1,1);
 	for(int i=0; i<gridRes; i++){
 		for(int j=0; j<gridRes; j++){
@@ -375,9 +414,9 @@ Outputs:
 			dir_vec(0,1) = sin(ph)*sin(th);		//ak y component
 			dir_vec(0,2) = cos(ph);				//ak z component
 
-			steerRow = -((float)(2.0*M_PI))*If*dir_vec*centered;
+			steerRow = -((float)(kwav))*If*dir_vec*centered;
 			for(int k=0; k<ants; k++){
-				steerRow(0,k) = exp(steerRow(0,k));
+				steerRow(0,k) = exp(steerRow(0,k))/((float)(sqrt(ants)));
 			}
 
 			temp1(0,0) =((steerRow.conjugate())*(*subspace)*(steerRow.transpose()))(0,0);
@@ -390,11 +429,12 @@ Outputs:
 	*thetas = theta;
 	*phis = phi;
 	MatrixXf temp(gridRes,gridRes);
-
+	
+	//Take abs of music spec and print it
 	for(int i=0; i<gridRes; i++){
 		for(int j=0; j<gridRes; j++){
 			temp(i,j) = ((float)20)*log10(abs(music_spec(i,j)));
-		//	temp(i,j) = abs(music_spec(i,j));
+			//temp(i,j) = abs(music_spec(i,j));
 //			printf("%f\n",temp(i,j));
 		}
 	}

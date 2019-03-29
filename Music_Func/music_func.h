@@ -34,7 +34,7 @@ void	centroid(float *points, int ants, float *center);
 bool 	comparator(pair <float, int> p1, pair <float, int> p2);
 void 	findPeaks(MatrixXf *S_music, MatrixXf *th, MatrixXf *ph, int gridRes, int tags, float *thetas, float *phis);
 
-void 	musicSpectrum(MatrixXcf *subspace, int ants, float *antPos, int gridRes, MatrixXf *S_music, MatrixXf *thetas, MatrixXf *phis);
+void 	musicSpectrum(MatrixXcf *subspace, int ants, float *antPos, int gridRes, float lambda, MatrixXf *S_music, MatrixXf *thetas, MatrixXf *phis);
 float	str2val(char bin[], int fracBits);
 void 	subspaceMat(MatrixXf *eigvals, MatrixXcf *eigvecs, int tags, int ants, MatrixXcf *subspace);
 void 	vec2autocorr(float valsReal[], float valsComp[], int ants, float _Complex *R);
