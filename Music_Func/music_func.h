@@ -21,23 +21,36 @@ using Eigen::VectorXcf;
 using Eigen::VectorXd;
 using Eigen::MatrixXf;
 using Eigen::Vector3f;
-	
-const std::complex<float> If(0.0f,1.0f);
-const float oneNorm = 5.0*M_PI/180.0;
 
-void 	ang2loc(float *antloc1, float th1, float ph1, float *antloc2, float th2, float ph2, int ants, float *dist, Vector3f *midpoint);
-void	autocorr2eig(float _Complex *R, int ants, MatrixXcf *eigmat, MatrixXf *eigvals);	
-void	 bestLocal(float *antloc1, float *thLocs1, float *phLocs1, float *antloc2, float *thLocs2, float *phLocs2, int ants, int tags, Vector3f *locations);
+//Global Variables
+const int ANTS = 4;						//Number of antennas
+extern int GRID_RES;						//Resolution of Music Spectra
+const int NUM_SAMPLES = 1024;			//Samples per autocorrelation matrix
+const int FRAC_BITS = 43;				//Fractional nits for autocorr numbers
+extern int TAGS;							//Number of tags (can be changed)
+const float FREQ = 915000000;			//Tag frequency
+const float DOL = 0.5;					//Distance over lambda
+const float LAMBDA = 300000000/FREQ;	//Wavelength
+const float D = DOL*LAMBDA;				//Distance
+const std::complex<float> If(0.0f,1.0f);//Imaginary unit
+const float oneNorm = 5.0*M_PI/180.0;	//Min distance between peaks
+
+
+void setConst(int grid_res, int tags);
+
+void 	ang2loc(float *antloc1, float th1, float ph1, float *antloc2, float th2, float ph2, float *dist, Vector3f *midpoint);
+void	autocorr2eig(float _Complex *R, MatrixXcf *eigmat, MatrixXf *eigvals);	
+void	 bestLocal(float *antloc1, float *thLocs1, float *phLocs1, float *antloc2, float *thLocs2, float *phLocs2, Vector3f *locations);
 
 int 	bitVal(char bit);
 void	centroid(float *points, int ants, float *center);
 bool 	comparator(pair <float, int> p1, pair <float, int> p2);
-void 	findPeaks(MatrixXf *S_music, MatrixXf *th, MatrixXf *ph, int gridRes, int tags, float *thetas, float *phis);
+void 	findPeaks(MatrixXf *S_music, MatrixXf *th, MatrixXf *ph, float *thetas, float *phis);
 
-void 	musicSpectrum(MatrixXcf *subspace, int ants, float *antPos, int gridRes, float lambda, MatrixXf *S_music, MatrixXf *thetas, MatrixXf *phis);
+void 	musicSpectrum(MatrixXcf *subspace, float *antPos, MatrixXf *S_music, MatrixXf *thetas, MatrixXf *phis);
 float	str2val(char bin[], int fracBits);
-void 	subspaceMat(MatrixXf *eigvals, MatrixXcf *eigvecs, int tags, int ants, MatrixXcf *subspace);
-void 	vec2autocorr(float valsReal[], float valsComp[], int ants, float _Complex *R);
+void 	subspaceMat(MatrixXf *eigvals, MatrixXcf *eigvecs, MatrixXcf *subspace);
+void 	vec2autocorr(float valsReal[], float valsComp[], float _Complex *R);
 
 
 

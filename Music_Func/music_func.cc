@@ -1,5 +1,14 @@
 #include "music_func.h"
 
+int GRID_RES;
+int TAGS;
+
+void setConst(int grid_res, int tags){
+	GRID_RES = grid_res;
+	TAGS = tags;
+}
+
+
 int bitVal(char bit){
 //Takes a '0' or '1' char and returns as int.
 	int val;
@@ -12,14 +21,13 @@ int bitVal(char bit){
 	return val;
 }
 
-void ang2loc(float *antloc1, float th1, float ph1, float *antloc2, float th2, float ph2, int ants, float *dist, Vector3f *midpoint){
+void ang2loc(float *antloc1, float th1, float ph1, float *antloc2, float th2, float ph2, float *dist, Vector3f *midpoint){
 /* Reutrns the minimum distance between the two rays pertruding from the center of the antenna arrays specified by the angles.
 
 Inputs:
 	*antloc	: [ANTS][3] Contains the coordiantes of an antenna array
 	th		: theta value corresponding to array
 	ph 		: phi value corresponding to array
-	ants	: number of antennas (ANTS)
 
 Outputs:
 	*dist	: Minimum distance between the two rays
@@ -30,8 +38,8 @@ Outputs:
 	c1 = new float[3];	//Center of array 1
 	c2 = new float[3];	//Center of array 2
 
-	centroid(antloc1, ants, c1);
-	centroid(antloc2, ants, c2);
+	centroid(antloc1, ANTS, c1);
+	centroid(antloc2, ANTS, c2);
 
 	//Store centers in vector objects
 	Vector3f center1, center2;
@@ -78,21 +86,20 @@ Outputs:
 	*midpoint = mid;
 }
 
-void autocorr2eig(float _Complex *R, int ants, MatrixXcf *eigmat, MatrixXf *eigvals){
+void autocorr2eig(float _Complex *R, MatrixXcf *eigmat, MatrixXf *eigvals){
 /*Takes an autocorrelation matrix and returns the eigenvectors and eigenvalues.
 
 Inputs:
 	*R 		: Pointer to R matrix values
-	ants	: Number of antennas
 	*eigmat	: Pointer to eigenvectors stored in matrix
 	*eigvals: Pointer to eigenvalues sotred in matrix (row vector)
 */
-	MatrixXcf Rmat(ants,ants);
+	MatrixXcf Rmat(ANTS,ANTS);
 
 	//Place R values into appropriate data type
-	for (int i=0; i<ants*ants; i++){
-		int row = i/ants;
-		int col = i%ants;
+	for (int i=0; i<ANTS*ANTS; i++){
+		int row = i/ANTS;
+		int col = i%ANTS;
 		Rmat(row,col) = *(R+i);
 	}
 
@@ -106,12 +113,12 @@ Inputs:
 //	std::cout << "\nR*eig: \n" << (Rmat)*((*eigmat).col(0)) << std::endl;
 }
 
-void bestLocal(float *antloc1, float *thLocs1, float *phLocs1, float *antloc2, float *thLocs2, float *phLocs2, int ants, int tags, Vector3f *locations){
+void bestLocal(float *antloc1, float *thLocs1, float *phLocs1, float *antloc2, float *thLocs2, float *phLocs2, Vector3f *locations){
 
 	vector <int> avail;		//Unpaired AOA indices
-	pair <int,int> matches[tags];
+	pair <int,int> matches[TAGS];
 
-	for(int i=0; i<tags; i++){
+	for(int i=0; i<TAGS; i++){
 		matches[i].first = i;
 		avail.push_back(i);
 	}
@@ -125,12 +132,12 @@ void bestLocal(float *antloc1, float *thLocs1, float *phLocs1, float *antloc2, f
 	loc = new Vector3f;
 	int bestInd;				//Index of best match
 
-	Vector3f locals[tags];		//Array of tags locations
+	Vector3f locals[TAGS];		//Array of tags locations
 
-	for(int i=0; i<tags; i++){
-		for(int j=0; j<tags-i; j++){
+	for(int i=0; i<TAGS; i++){
+		for(int j=0; j<TAGS-i; j++){
 			ang2loc(antloc1,*(thLocs1+i),*(phLocs1+i),antloc2,
-				*(thLocs2+avail.at(j)),*(phLocs2+avail.at(j)),ants,dist,midpoint);
+				*(thLocs2+avail.at(j)),*(phLocs2+avail.at(j)),dist,midpoint);
 			if(*dist < minDist){
 				minDist = *dist;
 				bestInd = j;
@@ -146,7 +153,7 @@ void bestLocal(float *antloc1, float *thLocs1, float *phLocs1, float *antloc2, f
 
 	*locations = locals[0];
 
-	for(int i=0; i<tags; i++){
+	for(int i=0; i<TAGS; i++){
 		cout << "Matches: " << matches[i].first << " and " << matches[i].second << endl;
 	}
 }
@@ -178,27 +185,25 @@ bool comparator(pair <float, int> p1, pair <float, int> p2){
 	return (p1.first > p2.first);
 }
 
-void findPeaks(MatrixXf *S_music, MatrixXf *th, MatrixXf *ph, int gridRes, int tags, float *thetas, float *phis){
+void findPeaks(MatrixXf *S_music, MatrixXf *th, MatrixXf *ph, float *thetas, float *phis){
 /* Find the theta and phi values of the peaks of the Music Spectrum.
  * 
  * Inputs: 
  * 	*S_music: Music spectrum
  *  *th		: Theta value grid
  *  *ph 	: Phi value grid
- *	gridRes	: Resolution of the grid
- *  tags	: Number of tags present (aka peaks to search for)
  * 
  * Outputs:
  * 	*thetas	: theta values of the peaks
  *  *phis	: phi values of the peals  
  */
-	if(tags == 1){
+	if(TAGS == 1){
 		float thMax;
 		float phMax;
 		float maxPeak = FLT_MIN;
 
-		for(int i=0; i<gridRes; i++){
-			for(int j=0; j<gridRes; j++){
+		for(int i=0; i<GRID_RES; i++){
+			for(int j=0; j<GRID_RES; j++){
 				if((*S_music)(i,j) > maxPeak){
 					thMax = (*th)(i,j);
 					phMax = (*ph)(i,j);
@@ -220,17 +225,18 @@ void findPeaks(MatrixXf *S_music, MatrixXf *th, MatrixXf *ph, int gridRes, int t
 		jp = 0;		//Next Column
 		k = 0;
 
-		float peaks[gridRes*gridRes];
-		float thTemp[gridRes*gridRes];
-		float phTemp[gridRes*gridRes];
+		int gg = GRID_RES*GRID_RES;
+		float peaks[gg];
+		float thTemp[gg];
+		float phTemp[gg];
 
-		for(int i=0; i<gridRes; i++){		//Theta loop (rows constant)		
+		for(int i=0; i<GRID_RES; i++){		//Theta loop (rows constant)		
 			//Handle edge cases for rows
 			if(i==0){
-				im = gridRes-1;		//Wrap around on the theta
+				im = GRID_RES-1;		//Wrap around on the theta
 				ip = 1;
 			}
-			else if(i == (gridRes-1)){
+			else if(i == (GRID_RES-1)){
 				im = i-1;			
 				ip = 0;				//Wrap around on the theta
 			}
@@ -239,15 +245,15 @@ void findPeaks(MatrixXf *S_music, MatrixXf *th, MatrixXf *ph, int gridRes, int t
 				ip = i+1;
 			}
 		
-			for(int j=0; j<gridRes; j++){	//Phi loop (cols constant)
+			for(int j=0; j<GRID_RES; j++){	//Phi loop (cols constant)
 				//Handle edge cases for rows
 				if(j==0){
 					jm = 0;
 					jp = 1;
 				}
-				else if(j == (gridRes-1)){
+				else if(j == (GRID_RES-1)){
 					jm = j-1;
-					jp = gridRes-1;
+					jp = GRID_RES-1;
 				}
 				else{
 					jm = j-1;
@@ -337,11 +343,11 @@ void findPeaks(MatrixXf *S_music, MatrixXf *th, MatrixXf *ph, int gridRes, int t
 		}
 		*/
 		//Take the n largest peaks where n is the number of tags;
-		float ordTh[tags];		//Ordered thetas
-		float ordPh[tags];		//Ordered phis
+		float ordTh[TAGS];		//Ordered thetas
+		float ordPh[TAGS];		//Ordered phis
 
 
-		for(int i=0; i<tags; i++){
+		for(int i=0; i<TAGS; i++){
 //			cout << "Location index: " << locs[i].second << endl;
 //			cout <<"\t TH: " << thTemp[locs[i].second]*(180/M_PI) << endl;
 //			cout <<"\t PH: " << phTemp[locs[i].second]*(180/M_PI) << endl;
@@ -360,15 +366,12 @@ void findPeaks(MatrixXf *S_music, MatrixXf *th, MatrixXf *ph, int gridRes, int t
 	}	
 }
 
-void musicSpectrum(MatrixXcf *subspace, int ants, float *antPos, int gridRes, float lambda, MatrixXf *S_music, MatrixXf *thetas, MatrixXf *phis){
+void musicSpectrum(MatrixXcf *subspace, float *antPos, MatrixXf *S_music, MatrixXf *thetas, MatrixXf *phis){
 /*Calculates the music spectrum based on the noise subspace matrix
 
 Inputs:	
 	*subspace	: Noise subspace matrix
-	ants		: Number of antennas
 	*antPos		: [ants][3] pointer to antenna coordinates
-	gridRes 	: Resolution of music spectrum
-	lambda 		: Wavelength
 
 Outputs:
 	*S_music	: [gridRes][girdRes] matrix containing values of the spectrum
@@ -377,18 +380,18 @@ Outputs:
 	*phis		: [gridRes][gridRes] matrix containing phis values
 */
 
-	MatrixXcf music_spec(gridRes,gridRes);	//To be filled in and then sent back
+	MatrixXcf music_spec(GRID_RES,GRID_RES);	//To be filled in and then sent back
 
 	float *center;
 	center = new float[3];
 //	cout << "Antpos: " <<  &antPos << endl;
 //	printf("Center %f, %f, %f\n", *center, *(center+1), *(center+2));
-	centroid(antPos, ants, center);
+	centroid(antPos, ANTS, center);
 
 //	printf("Center %f, %f, %f\n", *center, *(center+1), *(center+2));
 
-	MatrixXf centered(3,ants);	//Shifted antPos by center
-	for(int i=0; i<ants; i++){
+	MatrixXf centered(3,ANTS);	//Shifted antPos by center
+	for(int i=0; i<ANTS; i++){
 		for(int j=0; j<3; j++){
 			centered(j,i) = *(antPos+3*i+j) - *(center+j);
 		}
@@ -397,17 +400,17 @@ Outputs:
 //	cout << "Ant_locs\n" <<  centered << endl;
 	
 	MatrixXf dir_vec(1,3);		//Directional Vector
-	MatrixXcf steerRow(1,ants);	//Steering vector
+	MatrixXcf steerRow(1,ANTS);	//Steering vector
 
 	float th, ph;
-	MatrixXf theta(gridRes,gridRes), phi(gridRes,gridRes);
+	MatrixXf theta(GRID_RES,GRID_RES), phi(GRID_RES,GRID_RES);
 
-	float kwav = 2.0*M_PI/lambda;
+	float kwav = 2.0*M_PI/LAMBDA;
 	MatrixXcf temp1(1,1);
-	for(int i=0; i<gridRes; i++){
-		for(int j=0; j<gridRes; j++){
-			th = -M_PI + i*(2*M_PI)/(float)gridRes;
-			ph = j*(M_PI)/(float)(gridRes*2);
+	for(int i=0; i<GRID_RES; i++){
+		for(int j=0; j<GRID_RES; j++){
+			th = -M_PI + i*(2*M_PI)/(float)GRID_RES;
+			ph = j*(M_PI)/(float)(GRID_RES*2);
 			theta(i,j) = th;
 			phi(i,j) = ph;
 			dir_vec(0,0) = sin(ph)*cos(th);		//ak x component
@@ -415,8 +418,8 @@ Outputs:
 			dir_vec(0,2) = cos(ph);				//ak z component
 
 			steerRow = -((float)(kwav))*If*dir_vec*centered;
-			for(int k=0; k<ants; k++){
-				steerRow(0,k) = exp(steerRow(0,k))/((float)(sqrt(ants)));
+			for(int k=0; k<ANTS; k++){
+				steerRow(0,k) = exp(steerRow(0,k))/((float)(sqrt(ANTS)));
 			}
 
 			temp1(0,0) =((steerRow.conjugate())*(*subspace)*(steerRow.transpose()))(0,0);
@@ -428,11 +431,11 @@ Outputs:
 
 	*thetas = theta;
 	*phis = phi;
-	MatrixXf temp(gridRes,gridRes);
+	MatrixXf temp(GRID_RES,GRID_RES);
 	
 	//Take abs of music spec and print it
-	for(int i=0; i<gridRes; i++){
-		for(int j=0; j<gridRes; j++){
+	for(int i=0; i<GRID_RES; i++){
+		for(int j=0; j<GRID_RES; j++){
 			temp(i,j) = ((float)20)*log10(abs(music_spec(i,j)));
 			//temp(i,j) = abs(music_spec(i,j));
 //			printf("%f\n",temp(i,j));
@@ -466,20 +469,18 @@ float str2val(char bin[], int fracBits){
 	return val;
 }
 
-void subspaceMat(MatrixXf *eigvals, MatrixXcf *eigvecs, int tags, int ants,  MatrixXcf *subspace){
+void subspaceMat(MatrixXf *eigvals, MatrixXcf *eigvecs, MatrixXcf *subspace){
 /*Takes eigenvectors and eigenvalues and returns the appropriate Subspace matrix.
 
 Inputs:
 	*eigvals	: Pointer to eigenvalues
 	*eigvecs	: Pointer to eigenvector matrix
-	tags		: Number of tags
-	ants		: Number of antennas
 
 Ouputs:
 	*subspace	: Pointer to noise subspace matrix
 */
-	pair <float, int> lambs[ants];
-	for(int i=0; i<ants; i++){
+	pair <float, int> lambs[ANTS];
+	for(int i=0; i<ANTS; i++){
 		lambs[i].first = (*eigvals)(i);
 		lambs[i].second = i;
 	}
@@ -493,10 +494,10 @@ Ouputs:
 			 << ", Second " << lambs[i].second << endl;
 	}
 */
-	MatrixXcf subs(ants, ants-tags);
+	MatrixXcf subs(ANTS, ANTS-TAGS);
 
-	for(int i=0; i<ants-tags; i++){
-		int ind = lambs[i+tags].second;
+	for(int i=0; i<ANTS-TAGS; i++){
+		int ind = lambs[i+TAGS].second;
 		subs.col(i) = (*eigvecs).col(ind);
 	}
 
@@ -505,7 +506,7 @@ Ouputs:
 //	std::cout << "\nSubs :\n" << *subspace << std::endl;
 }
 
-void vec2autocorr(float valsReal[], float valsComp[],  int ants, float _Complex *R){
+void vec2autocorr(float valsReal[], float valsComp[], float _Complex *R){
 /* Returns autocorrelation matrix formed from the values in vals.
  *
  * Inputs:
@@ -518,17 +519,17 @@ void vec2autocorr(float valsReal[], float valsComp[],  int ants, float _Complex 
  * 	*R	: Pointer to a 2D array of complex values
  */	
 	float _Complex temp;
-	for (int i=0; i<ants; i++){
-		for (int j=0; j<ants; j++){
+	for (int i=0; i<ANTS; i++){
+		for (int j=0; j<ANTS; j++){
 			if (j>=i){	//Upper triangular
-				int ind = i*ants - i*(i+1)/2 + j;
+				int ind = i*ANTS - i*(i+1)/2 + j;
 				temp = valsReal[ind] + I*valsComp[ind];	//Form the complex number. I is imag unit
-				*(R + ants*i + j) = temp;
+				*(R + ANTS*i + j) = temp;
 			}	
 			else{		//Lower triangular 
-				int ind = j*ants - j*(j+1)/2 + i;
+				int ind = j*ANTS - j*(j+1)/2 + i;
 				temp = valsReal[ind] - I*valsComp[ind];	//Form the complex number
-				*(R + ants*i + j) = temp;
+				*(R + ANTS*i + j) = temp;
 			}
 		}
    	}

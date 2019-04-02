@@ -5,6 +5,7 @@
 #include "Eigen/Dense"
 
 //Global Variables
+/*
 const int ANTS = 4;					//Number of antennas
 const int GRID_RES = 200;			//Resolution of Music Spectra		
 const int NUM_SAMPLES = 1024;		//Samples per autocorrelation matrix
@@ -14,11 +15,12 @@ const float FREQ = 915000000;		//Tag freq
 const float DOL = 0.5;				//Distance over lambda
 const float LAMBDA = 300000000/FREQ;	//Wavelength
 const float D = DOL*LAMBDA;				//Distance
-
+*/
 
 //Function Prototypes
 
 int main(){
+	setConst(200,1);
 	float freq = 915*pow(10,6);			//Frequency of RFID Tags
 	float lambda = 3*pow(10,8)/freq;	//Wavelength
 
@@ -93,8 +95,8 @@ int main(){
 	float valsR2[] = {.3499,-.1586, .2511,-.1612, .3476,-.1562, .2573, .3524,-.1621, .3621};
 	float valsC2[] = {.0000,-.1904,-.0009,-.1932, .0000, .1940,-.0066, .0000,-.1969, .0000};
 
-	vec2autocorr(valsR1,valsC1,ANTS,R1);
-	vec2autocorr(valsR2,valsC2,ANTS,R2);
+	vec2autocorr(valsR1,valsC1,R1);
+	vec2autocorr(valsR2,valsC2,R2);
 
 	MatrixXcf *eigvecs1, *eigvecs2;
 	MatrixXf *eigvals1, *eigvals2;
@@ -103,15 +105,15 @@ int main(){
 	eigvals1 = new MatrixXf;
 	eigvals2 = new MatrixXf;
 
-	autocorr2eig(R1, ANTS, eigvecs1, eigvals1);
-	autocorr2eig(R2, ANTS, eigvecs2, eigvals2);
+	autocorr2eig(R1, eigvecs1, eigvals1);
+	autocorr2eig(R2, eigvecs2, eigvals2);
 	
 	MatrixXcf *subspace1, *subspace2;
 	subspace1 = new MatrixXcf;
 	subspace2 = new MatrixXcf;
 
-	subspaceMat(eigvals1, eigvecs1, TAGS, ANTS, subspace1);
-	subspaceMat(eigvals2, eigvecs2, TAGS, ANTS, subspace2);
+	subspaceMat(eigvals1, eigvecs1, subspace1);
+	subspaceMat(eigvals2, eigvecs2, subspace2);
 
 	MatrixXf *S_music1, *thetas1, *phis1;
 	S_music1 = new MatrixXf;		//Music Spectrum values
@@ -123,19 +125,19 @@ int main(){
 	thetas2 = new MatrixXf;		//Theta grid
 	phis2 = new MatrixXf;		//Phi grid
 
-	musicSpectrum(subspace1, ANTS, a1, GRID_RES, LAMBDA, S_music1, thetas1, phis1);
+	musicSpectrum(subspace1, a1, S_music1, thetas1, phis1);
 
-	musicSpectrum(subspace2, ANTS, a2, GRID_RES, LAMBDA, S_music2, thetas2, phis2);
+	musicSpectrum(subspace2, a2, S_music2, thetas2, phis2);
 	
 	float *thLocs1, *phLocs1;
 	thLocs1 = new float[TAGS];	//Theta values corresponding to peaks
 	phLocs1 = new float[TAGS]; 	//Phi values corresponding to peaks 
-	findPeaks(S_music1, thetas1, phis1, GRID_RES, TAGS, thLocs1, phLocs1);
+	findPeaks(S_music1, thetas1, phis1, thLocs1, phLocs1);
 
 	float *thLocs2, *phLocs2;
 	thLocs2 = new float[TAGS];	//Theta values corresponding to peaks
 	phLocs2 = new float[TAGS]; 	//Phi values corresponding to peaks 
-	findPeaks(S_music2, thetas2, phis2, GRID_RES, TAGS, thLocs2, phLocs2);
+	findPeaks(S_music2, thetas2, phis2, thLocs2, phLocs2);
 
 	float *dist;
 	dist = new float;
@@ -152,7 +154,7 @@ int main(){
 
 	Vector3f *locations;
 	locations = new Vector3f[TAGS];
-	bestLocal(a1,thLocs1,phLocs1,a2,thLocs2,phLocs2,ANTS,TAGS,locations);
+	bestLocal(a1,thLocs1,phLocs1,a2,thLocs2,phLocs2,locations);
 
 	cout << "\n\nLocations:\n" << *locations << endl;
 
