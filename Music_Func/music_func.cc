@@ -3,26 +3,10 @@
 int GRID_RES;
 int TAGS;
 
-void setConst(int grid_res, int tags){
-	GRID_RES = grid_res;
-	TAGS = tags;
-}
-
-
-int bitVal(char bit){
-//Takes a '0' or '1' char and returns as int.
-	int val;
-	if(bit == '0'){
-		val = 0;
-	}
-	else{
-		val = 1;
-	}
-	return val;
-}
-
-void ang2loc(float *antloc1, float th1, float ph1, float *antloc2, float th2, float ph2, float *dist, Vector3f *midpoint){
-/* Reutrns the minimum distance between the two rays pertruding from the center of the antenna arrays specified by the angles.
+void ang2loc(float *antloc1, float th1, float ph1, float *antloc2, float th2,
+             float ph2, float *dist, Vector3f *midpoint){
+/* Reutrns the minimum distance between the two rays pertruding from the center
+   of the antenna arrays specified by the angles.
 
 Inputs:
 	*antloc	: [ANTS][3] Contains the coordiantes of an antenna array
@@ -113,8 +97,10 @@ Inputs:
 //	std::cout << "\nR*eig: \n" << (Rmat)*((*eigmat).col(0)) << std::endl;
 }
 
-void bestLocal(float *antloc1, float *thLocs1, float *phLocs1, float *antloc2, float *thLocs2, float *phLocs2, Vector3f *locations){
-
+void bestLocal(float *antloc1, float *thLocs1, float *phLocs1, float *antloc2,
+			   float *thLocs2, float *phLocs2, Vector3f *locations){
+//Takes the thetas and phis from each array and finds the best matching to 
+//localize the tags.
 	vector <int> avail;		//Unpaired AOA indices
 	pair <int,int> matches[TAGS];
 
@@ -154,8 +140,21 @@ void bestLocal(float *antloc1, float *thLocs1, float *phLocs1, float *antloc2, f
 	*locations = locals[0];
 
 	for(int i=0; i<TAGS; i++){
-		cout << "Matches: " << matches[i].first << " and " << matches[i].second << endl;
+		cout << "Matches: " << matches[i].first << " and "
+		     << matches[i].second << endl;
 	}
+}
+
+int bitVal(char bit){
+//Takes a '0' or '1' char and returns as int.
+	int val;
+	if(bit == '0'){
+		val = 0;
+	}
+	else{
+		val = 1;
+	}
+	return val;
 }
 
 void centroid(float *points, int ants, float *center){
@@ -185,7 +184,8 @@ bool comparator(pair <float, int> p1, pair <float, int> p2){
 	return (p1.first > p2.first);
 }
 
-void findPeaks(MatrixXf *S_music, MatrixXf *th, MatrixXf *ph, float *thetas, float *phis){
+void findPeaks(MatrixXf *S_music, MatrixXf *th, MatrixXf *ph, float *thetas,
+			   float *phis){
 /* Find the theta and phi values of the peaks of the Music Spectrum.
  * 
  * Inputs: 
@@ -444,6 +444,12 @@ Outputs:
 	*S_music = temp;
 }
 
+void setConst(int grid_res, int tags){
+//Sets the grid resolution and number of tags that are being used.
+	GRID_RES = grid_res;
+	TAGS = tags;
+}
+
 float str2val(char bin[], int fracBits){
 //Takes a string representing a 2s complement binary number and converts to a float.
 	float val = 0;		//Value of binary string
@@ -510,9 +516,11 @@ void vec2autocorr(float valsReal[], float valsComp[], float _Complex *R){
 /* Returns autocorrelation matrix formed from the values in vals.
  *
  * Inputs:
- * 	valsReal: Array of the real portion of values containing the upper traingular portion
+ * 	valsReal: Array of the real portion of values containing the upper
+ 			  traingular portion
  * 		  [r11, r12, r13, r22, r23, r33] are the indexes for the 3x3 R case.
- * 	valsComp: Array of the complex portion of values containing the upper traingular portion
+ * 	valsComp: Array of the complex portion of values containing the upper
+ 			  traingular portion
  * 	ants	: Number of antennas (aka size of square matrix)
  *
  * Outputs: 
