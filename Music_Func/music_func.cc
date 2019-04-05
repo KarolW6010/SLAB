@@ -213,7 +213,8 @@ void findPeaks(MatrixXf *S_music, MatrixXf *th, MatrixXf *ph, float *thetas,
 		}
 		*thetas = thMax;
 		*phis = phMax;
-
+	
+		cout << "Theta: " << thMax << ", Phi: " << phMax << endl;
 	}
 	else{
 	
@@ -453,7 +454,7 @@ void setConst(int grid_res, int tags){
 float str2val(char bin[], int fracBits){
 //Takes a string representing a 2s complement binary number and converts to a float.
 	float val = 0;		//Value of binary string
-	int len = strlen(bin);	//How many bits to convert
+	int len = strlen(bin)-1;	//How many bits to convert
 	int bit;		//Bit value: either 0 or 1
 
 	if(bin[0] == '0'){	//Positive value
@@ -541,6 +542,278 @@ void vec2autocorr(float valsReal[], float valsComp[], float _Complex *R){
 			}
 		}
    	}
+}
+
+
+void	Rs2Loc(int tags, int grid_res,
+			   char r1_0[], char r1_1[], char r1_2[], char r1_3[], char r1_4[],
+			   char r1_5[], char r1_6[], char r1_7[], char r1_8[], char r1_9[], 
+			   char r2_0[], char r2_1[], char r2_2[], char r2_3[], char r2_4[],
+			   char r2_5[], char r2_6[], char r2_7[], char r2_8[], char r2_9[],
+			   Vector3f *locs){
+	setConst(grid_res, tags);
+
+	int len = strlen(r1_0);
+
+	//Break up char arrays into real and imaginary arrays
+	char rr1_0[len/2+1], rc1_0[len/2+1];
+	char rr1_1[len/2+1], rc1_1[len/2+1];
+	char rr1_2[len/2+1], rc1_2[len/2+1];
+	char rr1_3[len/2+1], rc1_3[len/2+1];
+	char rr1_4[len/2+1], rc1_4[len/2+1];
+	char rr1_5[len/2+1], rc1_5[len/2+1];
+	char rr1_6[len/2+1], rc1_6[len/2+1];
+	char rr1_7[len/2+1], rc1_7[len/2+1];
+	char rr1_8[len/2+1], rc1_8[len/2+1];
+	char rr1_9[len/2+1], rc1_9[len/2+1];
+
+	char rr2_0[len/2+1], rc2_0[len/2+1];
+	char rr2_1[len/2+1], rc2_1[len/2+1];
+	char rr2_2[len/2+1], rc2_2[len/2+1];
+	char rr2_3[len/2+1], rc2_3[len/2+1];
+	char rr2_4[len/2+1], rc2_4[len/2+1];
+	char rr2_5[len/2+1], rc2_5[len/2+1];
+	char rr2_6[len/2+1], rc2_6[len/2+1];
+	char rr2_7[len/2+1], rc2_7[len/2+1];
+	char rr2_8[len/2+1], rc2_8[len/2+1];
+	char rr2_9[len/2+1], rc2_9[len/2+1];
+	
+	//Fill the arrays
+	for(int i=0; i<len/2; i++){
+		rr1_0[i] = r1_0[i];		rc1_0[i] = r1_0[i+len/2];
+		rr1_1[i] = r1_1[i];		rc1_1[i] = r1_1[i+len/2];
+		rr1_2[i] = r1_2[i];		rc1_2[i] = r1_2[i+len/2];
+		rr1_3[i] = r1_3[i];		rc1_3[i] = r1_3[i+len/2];
+		rr1_4[i] = r1_4[i];		rc1_4[i] = r1_4[i+len/2];
+		rr1_5[i] = r1_5[i];		rc1_5[i] = r1_5[i+len/2];
+		rr1_6[i] = r1_6[i];		rc1_6[i] = r1_6[i+len/2];
+		rr1_7[i] = r1_7[i];		rc1_7[i] = r1_7[i+len/2];
+		rr1_8[i] = r1_8[i];		rc1_8[i] = r1_8[i+len/2];
+		rr1_9[i] = r1_9[i];		rc1_9[i] = r1_9[i+len/2];
+
+		rr2_0[i] = r2_0[i];		rc2_0[i] = r2_0[i+len/2];
+		rr2_1[i] = r2_1[i];		rc2_1[i] = r2_1[i+len/2];
+		rr2_2[i] = r2_2[i];		rc2_2[i] = r2_2[i+len/2];
+		rr2_3[i] = r2_3[i];		rc2_3[i] = r2_3[i+len/2];
+		rr2_4[i] = r2_4[i];		rc2_4[i] = r2_4[i+len/2];
+		rr2_5[i] = r2_5[i];		rc2_5[i] = r2_5[i+len/2];
+		rr2_6[i] = r2_6[i];		rc2_6[i] = r2_6[i+len/2];
+		rr2_7[i] = r2_7[i];		rc2_7[i] = r2_7[i+len/2];
+		rr2_8[i] = r2_8[i];		rc2_8[i] = r2_8[i+len/2];
+		rr2_9[i] = r2_9[i];		rc2_9[i] = r2_9[i+len/2];
+	}
+
+	int t = len/2 + 1;
+	rr1_0[t] = '\0';	rc1_0[t] = '\0';
+	rr1_1[t] = '\0';	rc1_1[t] = '\0';
+	rr1_2[t] = '\0';	rc1_2[t] = '\0';
+	rr1_3[t] = '\0';	rc1_3[t] = '\0';
+	rr1_4[t] = '\0';	rc1_4[t] = '\0';
+	rr1_5[t] = '\0';	rc1_5[t] = '\0';
+	rr1_6[t] = '\0';	rc1_6[t] = '\0';
+	rr1_7[t] = '\0';	rc1_7[t] = '\0';
+	rr1_8[t] = '\0';	rc1_8[t] = '\0';
+	rr1_9[t] = '\0';	rc1_9[t] = '\0';
+
+	rr2_0[t] = '\0';	rc2_0[t] = '\0';
+	rr2_1[t] = '\0';	rc2_1[t] = '\0';
+	rr2_2[t] = '\0';	rc2_2[t] = '\0';
+	rr2_3[t] = '\0';	rc2_3[t] = '\0';
+	rr2_4[t] = '\0';	rc2_4[t] = '\0';
+	rr2_5[t] = '\0';	rc2_5[t] = '\0';
+	rr2_6[t] = '\0';	rc2_6[t] = '\0';
+	rr2_7[t] = '\0';	rc2_7[t] = '\0';
+	rr2_8[t] = '\0';	rc2_8[t] = '\0';
+	rr2_9[t] = '\0';	rc2_9[t] = '\0';
+
+//	cout << "RR1_0 : " << rr1_0[0] << rr1_0[1] << rr1_0[2] << rr1_0[3] <<
+//						  rr1_0[4] << endl;
+//
+//	cout << "RC1_0 : " << rc1_0[0] << rc1_0[1] << rc1_0[2] << rc1_0[3] <<
+//						  rc1_0[4] << endl;
+
+	//Convert character arrays to numbers
+		//R1 real part
+	float Rr1_0 = str2val(rr1_0, FRAC_BITS);
+	float Rr1_1 = str2val(rr1_1, FRAC_BITS);
+	float Rr1_2 = str2val(rr1_2, FRAC_BITS);
+	float Rr1_3 = str2val(rr1_3, FRAC_BITS);
+	float Rr1_4 = str2val(rr1_4, FRAC_BITS);
+	float Rr1_5 = str2val(rr1_5, FRAC_BITS);
+	float Rr1_6 = str2val(rr1_6, FRAC_BITS);
+	float Rr1_7 = str2val(rr1_7, FRAC_BITS);
+	float Rr1_8 = str2val(rr1_8, FRAC_BITS);
+	float Rr1_9 = str2val(rr1_9, FRAC_BITS);
+		//R1 imagianry part
+	float Rc1_0 = str2val(rc1_0, FRAC_BITS);
+	float Rc1_1 = str2val(rc1_1, FRAC_BITS);
+	float Rc1_2 = str2val(rc1_2, FRAC_BITS);
+	float Rc1_3 = str2val(rc1_3, FRAC_BITS);
+	float Rc1_4 = str2val(rc1_4, FRAC_BITS);
+	float Rc1_5 = str2val(rc1_5, FRAC_BITS);
+	float Rc1_6 = str2val(rc1_6, FRAC_BITS);
+	float Rc1_7 = str2val(rc1_7, FRAC_BITS);
+	float Rc1_8 = str2val(rc1_8, FRAC_BITS);
+	float Rc1_9 = str2val(rc1_9, FRAC_BITS);
+		
+	float valsR1[] = {Rr1_0, Rr1_1, Rr1_2, Rr1_3, Rr1_4,
+					  Rr1_5, Rr1_6, Rr1_7, Rr1_8, Rr1_9};
+	float valsC1[] = {Rc1_0, Rc1_1, Rc1_2, Rc1_3, Rc1_4,
+					  Rc1_5, Rc1_6, Rc1_7, Rc1_8, Rc1_9};
+
+		//R2 real part
+	float Rr2_0 = str2val(rr2_0, FRAC_BITS);
+	float Rr2_1 = str2val(rr2_1, FRAC_BITS);
+	float Rr2_2 = str2val(rr2_2, FRAC_BITS);
+	float Rr2_3 = str2val(rr2_3, FRAC_BITS);
+	float Rr2_4 = str2val(rr2_4, FRAC_BITS);
+	float Rr2_5 = str2val(rr2_5, FRAC_BITS);
+	float Rr2_6 = str2val(rr2_6, FRAC_BITS);
+	float Rr2_7 = str2val(rr2_7, FRAC_BITS);
+	float Rr2_8 = str2val(rr2_8, FRAC_BITS);
+	float Rr2_9 = str2val(rr2_9, FRAC_BITS);
+		//R2 imaginary part
+	float Rc2_0 = str2val(rc2_0, FRAC_BITS);
+	float Rc2_1 = str2val(rc2_1, FRAC_BITS);
+	float Rc2_2 = str2val(rc2_2, FRAC_BITS);
+	float Rc2_3 = str2val(rc2_3, FRAC_BITS);
+	float Rc2_4 = str2val(rc2_4, FRAC_BITS);
+	float Rc2_5 = str2val(rc2_5, FRAC_BITS);
+	float Rc2_6 = str2val(rc2_6, FRAC_BITS);
+	float Rc2_7 = str2val(rc2_7, FRAC_BITS);
+	float Rc2_8 = str2val(rc2_8, FRAC_BITS);
+	float Rc2_9 = str2val(rc2_9, FRAC_BITS);
+	
+	float valsR2[] = {Rr2_0, Rr2_1, Rr2_2, Rr2_3, Rr2_4,
+					  Rr2_5, Rr2_6, Rr2_7, Rr2_8, Rr2_9};
+	float valsC2[] = {Rc2_0, Rc2_1, Rc2_2, Rc2_3, Rc2_4,
+					  Rc2_5, Rc2_6, Rc2_7, Rc2_8, Rc2_9};
+//	cout << valsR1[0] << " + j" << valsC1[0] << endl;
+
+	float array1[ANTS][3];		//ANTS antennas, (x,y,z) coordinates
+	float array2[ANTS][3];		//^ but for array 2
+	
+	//Array 1
+	array1[0][0] = 0.0*D;
+	array1[0][1] = 0.0*D;
+	array1[0][2] = 0.0;
+
+	array1[1][0] = 1.0*D;
+	array1[1][1] = 0.0*D;
+	array1[1][2] = 0.0;
+
+	array1[2][0] = 0.0*D;
+	array1[2][1] = 1.0*D;
+	array1[2][2] = 0.0;
+
+	array1[3][0] = 1.0*D;
+	array1[3][1] = 1.0*D;
+	array1[3][2] = 0.0;
+	
+	//Array 2
+	array2[0][0] = 2.0;
+	array2[0][1] = 0.0;
+	array2[0][2] = 0.0;
+
+	array2[1][0] = 2.0+1.0*D;
+	array2[1][1] = 0.0;
+	array2[1][2] = 0.0;
+
+	array2[2][0] = 2.0;
+	array2[2][1] = 1.0*D;
+	array2[2][2] = 0.0;
+
+	array2[3][0] = 2.0+1.0*D;
+	array2[3][1] = 1.0*D;
+	array2[3][2] = 0.0;
+
+/*
+	//Scale appropriately
+	for(int i=0; i<ANTS; i++){
+		for(int j=0; j<3; j++){
+		//	array1[i][j] = array1[i][j]*D;
+		//	array2[i][j] = array2[i][j]*D;
+			cout << "Array 1: " << array1[i][j] << ", Array 2: " << array2[i][j] << endl;
+		}
+		cout << endl;
+	}
+*/
+	float *a1, *a2;
+	a1 = new float[ANTS*3];
+	a2 = new float[ANTS*3];
+	a1 = &array1[0][0];
+	a2 = &array2[0][0];
+
+	//Find centers of array 1 and 2
+	float *center1, *center2;
+	center1 = new float[3];
+	center2 = new float[3];
+
+	float _Complex *R1, *R2;
+	R1 = new float _Complex[ANTS*ANTS];
+	R2 = new float _Complex[ANTS*ANTS];
+
+	vec2autocorr(valsR1,valsC1,R1);
+	vec2autocorr(valsR2,valsC2,R2);
+	
+	MatrixXcf *eigvecs1, *eigvecs2;
+	MatrixXf *eigvals1, *eigvals2;
+	eigvecs1 = new MatrixXcf;
+	eigvecs2 = new MatrixXcf;
+	eigvals1 = new MatrixXf;
+	eigvals2 = new MatrixXf;
+
+	autocorr2eig(R1, eigvecs1, eigvals1);
+	autocorr2eig(R2, eigvecs2, eigvals2);
+	
+	MatrixXcf *subspace1, *subspace2;
+	subspace1 = new MatrixXcf;
+	subspace2 = new MatrixXcf;
+
+	subspaceMat(eigvals1, eigvecs1, subspace1);
+	subspaceMat(eigvals2, eigvecs2, subspace2);
+
+	MatrixXf *S_music1, *thetas1, *phis1;
+	S_music1 = new MatrixXf;		//Music Spectrum values
+	thetas1 = new MatrixXf;			//Theta grid
+	phis1 = new MatrixXf;			//Phi grid
+	
+	MatrixXf *S_music2, *thetas2, *phis2;
+	S_music2 = new MatrixXf;		//Music Spectrum values
+	thetas2 = new MatrixXf;			//Theta grid
+	phis2 = new MatrixXf;			//Phi grid
+
+	musicSpectrum(subspace1, a1, S_music1, thetas1, phis1);
+	musicSpectrum(subspace2, a2, S_music2, thetas2, phis2);
+	
+	float *thLocs1, *phLocs1;
+	thLocs1 = new float[TAGS];	//Theta values corresponding to peaks
+	phLocs1 = new float[TAGS]; 	//Phi values corresponding to peaks 
+	findPeaks(S_music1, thetas1, phis1, thLocs1, phLocs1);
+
+	float *thLocs2, *phLocs2;
+	thLocs2 = new float[TAGS];	//Theta values corresponding to peaks
+	phLocs2 = new float[TAGS]; 	//Phi values corresponding to peaks 
+	findPeaks(S_music2, thetas2, phis2, thLocs2, phLocs2);
+
+	float *dist;
+	dist = new float;
+	Vector3f *midpoint;
+	midpoint = new Vector3f;
+
+//	cout << "\nBefore Func: Th1 = " << thLocs1[0] << ", Ph1 = " << phLocs1[0]
+//		 << "\nBefore Func: Th2 = " << thLocs2[0] << ", Ph2 = " << phLocs2[0] << endl;
+
+//	ang2loc(a1,*thLocs1,*phLocs1,a2,*thLocs2,*phLocs2,ANTS,dist,midpoint);
+
+//	cout << "Midpoint:\n" << *midpoint << endl;
+//	cout << "Distance = " << *dist << endl;
+
+	Vector3f *locations;
+	locations = new Vector3f[TAGS];
+	bestLocal(a1,thLocs1,phLocs1,a2,thLocs2,phLocs2,locations);
+
+	locs = locations;
 }
 
 

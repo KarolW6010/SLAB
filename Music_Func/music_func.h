@@ -58,7 +58,7 @@ void	Rs2Loc(int tags, int grid_res,
 			   char r1_5[], char r1_6[], char r1_7[], char r1_8[], char r1_9[], 
 			   char r2_0[], char r2_1[], char r2_2[], char r2_3[], char r2_4[],
 			   char r2_5[], char r2_6[], char r2_7[], char r2_8[], char r2_9[],
-			   float *locs); 
+			   Vector3f *locs); 
 
 #define __MUSIC_FUNC_H
 #endif
